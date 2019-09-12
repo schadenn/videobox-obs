@@ -9,3 +9,7 @@ export const oneDriveConfig = {
     scope:
         "offline_access openid https://graph.microsoft.com/user.read https://graph.microsoft.com/files.readwrite",
 };
+
+export const obsPW = "ichbins";
+
+export const recordedFilesPath = "C:/obsrec";

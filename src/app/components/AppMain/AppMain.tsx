@@ -7,8 +7,8 @@ import Timer = NodeJS.Timer;
 import * as fs from "fs";
 import { SceneChooser } from "../SceneChooser/SceneChooser";
 import * as Electron from "electron";
-import BrowserWindow = Electron.remote.BrowserWindow;
 import * as path from "path";
+import {recordedFilesPath, obsPW} from "../../videobox.config";
 
 const MainWrapper = styled.div`
   height: 100%;
@@ -47,8 +47,6 @@ const SwitchButton = styled.button<{ mg: boolean } & React.HTMLAttributes<HTMLBu
   }
 ` as React.FunctionComponent<{ mg: boolean } & React.HTMLAttributes<HTMLButtonElement>>;
 
-const recFilesPath = "C:/obsrec";
-
 const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ token, onEnd }) => {
   const delay = 6;
   const [record, setRecord] = React.useState(false);
@@ -64,7 +62,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
     const obsInstance = new OBSRemote();
     obsInstance
       .connect()
-      .then(() => obsInstance.login("ichbins"))
+      .then(() => obsInstance.login(obsPW))
       .then(() => obsInstance.on("RecordingStopped", onRecordFinished))
       .then(() => setObs(obsInstance));
   }, []);
@@ -89,38 +87,50 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
         });
       } else if (mode === "foto") {
         setRecording(true);
-        const vsWrapper = document.getElementById("videoStreamWrapper");
-        const appWrapper = document.getElementById("appWrapper");
-        const vsRect = vsWrapper.getBoundingClientRect();
-        const appRect = appWrapper.getBoundingClientRect();
-        const x = Math.floor((vsRect.left / appRect.width) * 3000);
-        const y = Math.floor((vsRect.top / appRect.height) * 2000);
-        const width = Math.floor((vsRect.width / appRect.width) * 3000);
-        const height = Math.floor((vsRect.height / appRect.height) * 2000);
-
-        const fileName = `${Date.now()}.jpg`;
-        setTimeout(() => {
-          Electron.desktopCapturer.getSources(
-            { types: ["screen"], thumbnailSize: { width: 3000, height: 2000 } },
-            (err, src) =>
-              fs.writeFile(
-                path.join(recFilesPath, fileName),
-                src
-                  .find(s => s.name === "Entire screen")
-                  .thumbnail.crop({ x, y, width, height })
-                  .toJPEG(90),
-                function(error) {
-                  if (error) return console.log(error);
-                  console.log("Done");
-                  setPlaybackFile(fileName);
-                  setRecording(false);
-                },
-              ),
-          );
-        }, 300);
+        takePhoto()
+          .then(fileName => {
+            setPlaybackFile(fileName);
+            setRecording(false);
+          })
+          .catch(error => console.log(error));
       }
     }
   }, [countdown, record]);
+
+  const takePhoto = () =>
+    new Promise((resolve, reject) => {
+      const vsWrapper = document.getElementById("videoStreamWrapper");
+      const appWrapper = document.getElementById("appWrapper");
+      const vsRect = vsWrapper.getBoundingClientRect();
+      const appRect = appWrapper.getBoundingClientRect();
+      const x = Math.floor((vsRect.left / appRect.width) * 3000);
+      const y = Math.floor((vsRect.top / appRect.height) * 2000);
+      const width = Math.floor((vsRect.width / appRect.width) * 3000);
+      const height = Math.floor((vsRect.height / appRect.height) * 2000);
+
+      const fileName = `${Date.now()}.jpg`;
+      setTimeout(() => {
+        Electron.desktopCapturer.getSources(
+          { types: ["screen"], thumbnailSize: { width: 3000, height: 2000 } },
+          (err, src) =>
+            fs.writeFile(
+              path.join(recordedFilesPath, fileName),
+              src
+                .find(s => s.name === "Entire screen")
+                .thumbnail.crop({ x, y, width, height })
+                .toJPEG(90),
+              error => {
+                if (error) {
+                  reject(error);
+                } else {
+                  console.log("Photo taken");
+                  resolve(fileName);
+                }
+              },
+            ),
+        );
+      }, 300);
+    });
 
   const stopCountdown = () => {
     if (delayTimer) {
@@ -132,7 +142,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
   };
 
   const onRecordFinished = () => {
-    fs.readdir(recFilesPath, (err, files) => {
+    fs.readdir(recordedFilesPath, (err, files) => {
       setPlaybackFile(files.find(file => !(window as any).recFiles.includes(file)));
     });
   };
@@ -141,7 +151,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
     stopCountdown();
     if (!recording && !record) {
       setRecord(true);
-      fs.readdir(recFilesPath, (err, files) => {
+      fs.readdir(recordedFilesPath, (err, files) => {
         (window as any).recFiles = files;
       });
       setDelayTimer([
@@ -207,4 +217,4 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
   );
 };
 
-export { AppMain, recFilesPath };
+export { AppMain };

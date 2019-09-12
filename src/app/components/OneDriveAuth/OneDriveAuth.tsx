@@ -1,7 +1,7 @@
 import * as React from "react";
 import styled from "styled-components";
 import * as Electron from "electron";
-import {oneDriveConfig} from "../../onedrive.config";
+import {oneDriveConfig} from "../../videobox.config";
 import {oneDriveSecrets} from "../../onedrive.secrets";
 import BrowserWindow = Electron.remote.BrowserWindow;
 
