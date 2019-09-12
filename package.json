@@ -1,45 +1,130 @@
 {
-  "name": "videobox-obs",
-  "version": "0.1.0",
+  "name": "typescript-with-electron-react-kit",
+  "productName": "Videobox",
+  "main": "out/main.js",
+  "version": "2.0.0",
+  "description": "A photo-/videobox UI that controls OBS via Websocket plugin.",
+  "license": "MIT",
   "private": true,
-  "dependencies": {
-    "@types/jest": "24.0.12",
-    "@types/node": "12.0.0",
-    "@types/react": "16.8.17",
-    "@types/react-dom": "16.8.4",
-    "@types/styled-components": "^4.1.14",
-    "obs-websocket-js": "^3.0.0",
-    "prettier": "^1.17.0",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "react-scripts": "3.0.1",
-    "styled-components": "^4.2.0",
-    "typescript": "3.4.5"
+  "author": {
+    "email": "dennis@schaller-ulm.de",
+    "name": "Dennis Schaller"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/schadenn/videobox-obs.git"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "electron": "npx electron electron-starter.js"
+    "clean": "rm -rf .fusebox out dist coverage",
+    "compile": "NODE_ENV=production ts-node fuse",
+    "coverage:upload": "cat ./coverage/lcov.info | coveralls",
+    "coverage": "yarn test --coverage --no-cache",
+    "dist": "electron-builder --mac --win --linux --ia32 --x64",
+    "draft": "electron-builder -p always --draft --mac --win --linux --ia32 --x64",
+    "format": "prettier --write **/*.ts && tslint -p . --fix",
+    "lint": "tslint --project .",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps",
+    "precommit": "lint-staged",
+    "prepush": "npm-run-all typecheck lint",
+    "sanity": "npm-run-all clean typecheck lint test clean compile clean",
+    "start": "ts-node fuse",
+    "test": "jest",
+    "typecheck": "tsc -p . --noEmit --pretty"
   },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "dependencies": {
+    "@types/styled-components": "^4.1.14",
+    "electron-is-dev": "^0.3.0",
+    "electron-log": "^2.2.13",
+    "electron-store": "^1.3.0",
+    "electron-updater": "^2.18.2",
+    "electron-window-state-manager": "^0.3.2",
+    "glamor": "^2.20.40",
+    "mousetrap": "^1.6.1",
+    "onedrive-api": "^0.3.1",
+    "onedrive-auth": "^1.1.1",
+    "onedrivejs": "^1.3.12",
+    "popmotion": "^8.1.7",
+    "popmotion-react": "^2.1.0",
+    "prop-types": "^15.6.0",
+    "ramda": "^0.25.0",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-transition-group": "^2.9.0",
+    "styled-components": "^4.2.0",
+    "typescript": "^3.4.5"
   },
   "devDependencies": {
-    "electron": "^5.0.1",
-    "electron-app": "^1.0.0"
+    "@types/electron-is-dev": "^0.3.0",
+    "@types/electron-store": "^1.2.0",
+    "@types/jest": "^22.0.1",
+    "@types/mousetrap": "^1.6.0",
+    "@types/react": "^16.0.34",
+    "@types/react-dom": "^16.0.3",
+    "@types/react-test-renderer": "^16.0.0",
+    "@types/storybook__react": "^3.0.6",
+    "babel-preset-react": "^6.24.1",
+    "coveralls": "^3.0.0",
+    "electron": "^1.7.10",
+    "electron-builder": "^19.52.1",
+    "fuse-box": "^3.0.2",
+    "husky": "^0.14.3",
+    "jest": "^22.0.4",
+    "jest-expect-contain-deep": "^1.0.1",
+    "lint-staged": "^6.0.0",
+    "npm-run-all": "^4.1.2",
+    "prettier": "^1.9.2",
+    "react-powerplug": "^0.1.2",
+    "react-test-renderer": "^16.2.0",
+    "ts-jest": "^22.0.1",
+    "ts-loader": "^3.2.0",
+    "ts-node": "^4.1.0",
+    "tslint": "^5.8.0",
+    "tslint-config-prettier": "^1.6.0"
+  },
+  "jest": {
+    "setupFiles": [
+      "./test/setup.ts"
+    ],
+    "transform": {
+      ".(ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+    },
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/mock-file.ts",
+      "\\.(css|less)$": "<rootDir>/test/mock-style.ts"
+    },
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "json"
+    ],
+    "coveragePathIgnorePatterns": [
+      "./node_modules",
+      "./out",
+      "./build",
+      "./dist",
+      "./test",
+      "./docs",
+      "\\.story.tsx$"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 95,
+        "lines": 95,
+        "statements": 95
+      }
+    },
+    "collectCoverage": false,
+    "mapCoverage": true
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "tslint --fix",
+      "git add"
+    ]
   }
 }
