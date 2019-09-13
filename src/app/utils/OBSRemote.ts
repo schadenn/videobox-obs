@@ -1,3 +1,7 @@
+/**
+ * Taken from: https://github.com/t2t2/obs-tablet-remote/blob/master/src/obs-remote.js
+ */
+
 import * as EventEmitter from "events"
 import * as Sha256Hash from "sha.js/sha256"
 
