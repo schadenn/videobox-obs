@@ -27,7 +27,8 @@
     "postinstall": "electron-builder install-app-deps",
     "precommit": "lint-staged",
     "prepush": "npm-run-all typecheck lint",
-    "start": "node -r esm fuse"
+    "start": "node -r esm fuse",
+    "typecheck": "tsc -p . --noEmit --pretty"
   },
   "dependencies": {
     "@types/styled-components": "^4.1.14",
@@ -37,6 +38,7 @@
     "electron-updater": "^2.18.2",
     "electron-window-state-manager": "^0.3.2",
     "mousetrap": "^1.6.1",
+    "onedrive-api": "^0.3.3",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-transition-group": "^2.9.0",

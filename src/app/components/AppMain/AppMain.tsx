@@ -61,7 +61,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
     const obsInstance = new OBSRemote();
     obsInstance
       .connect()
-      .then(() => obsInstance.login(config.obsPW))
+      .then(() => obsInstance.login(config.obsWebsocketPw))
       .then(() => obsInstance.on("RecordingStopped", onRecordFinished))
       .then(() => setObs(obsInstance));
   }, []);
@@ -97,7 +97,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
   }, [countdown, record]);
 
   const takePhoto = () =>
-    new Promise((resolve, reject) => {
+    new Promise<string>((resolve, reject) => {
       const vsWrapper = document.getElementById("videoStreamWrapper");
       const appWrapper = document.getElementById("appWrapper");
       const vsRect = vsWrapper.getBoundingClientRect();
