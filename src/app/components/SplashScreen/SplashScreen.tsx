@@ -62,7 +62,6 @@ const SplashScreen = ({ onStart }) => {
       setShowStart(!showStart);
     }, 3000);
   }, [showStart]);
-
   React.useEffect(() => {
     setTimeout(() => {
       setShowYour(!showYour);

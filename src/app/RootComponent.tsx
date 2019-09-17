@@ -4,6 +4,8 @@ import { AppMain } from "./components/AppMain/AppMain";
 import { OneDriveAuth } from "./components/OneDriveAuth/OneDriveAuth";
 import { SplashScreen } from "./components/SplashScreen/SplashScreen";
 import { Confirmation } from "./components/Confirmation/Confirmation";
+import { config, TScreenNames } from "./videobox.config";
+import { ThankYou } from "./components/ThankYou/thankyou";
 
 const AppWrapper = styled.div`
   display: flex;
@@ -21,49 +23,64 @@ const AppWrapper = styled.div`
 `;
 
 const RootComponent = () => {
+  const screenNav = config.screens
+    .filter(screen => screen.show)
+    .reduce((acc, curr) => ({ ...acc, [curr.name]: curr.goto }));
   const [token, setToken] = React.useState("");
   const [file, setFile] = React.useState("");
-  const [path, setPath] = React.useState<"splashscreen" | "app" | "confirmation">("app");
+  const [path, setPath] = React.useState<Partial<TScreenNames>>(
+    (config.screens.find(screen => screen.landing) || config.screens[0]).name,
+  );
+  const screens = {
+    splash: (
+      <SplashScreen
+        onStart={() => {
+          setPath(screenNav[path].goto.next);
+        }}
+      />
+    ),
+    app: (
+      <AppMain
+        token={token}
+        onEnd={file => {
+          setFile(file);
+          setPath(screenNav[path].goto.next);
+        }}
+      />
+    ),
+    confirmation: (
+      <Confirmation
+        accessToken={token}
+        filename={file}
+        onDone={() => {
+          setPath(screenNav[path].goto.next);
+          setFile("");
+        }}
+        onRetry={() => {
+          setPath(screenNav[path].goto.prev);
+          setFile("");
+        }}
+      />
+    ),
+    thankyou: (
+      <ThankYou
+        onEnd={() => {
+          setPath(screenNav[path].goto.next);
+        }}
+      />
+    ),
+  };
 
   return (
     <AppWrapper id={"appWrapper"}>
-        <OneDriveAuth
-          display={!token}
-          onAuthorized={token => {
-            console.log(token);
-            setToken(token);
-          }}
-        />
-      {token && path === "splashscreen" && (
-        <SplashScreen
-          onStart={() => {
-            setPath("app");
-          }}
-        />
-      )}
-      {token && path === "app" && (
-        <AppMain
-          token={token}
-          onEnd={file => {
-            setFile(file);
-            setPath("confirmation");
-          }}
-        />
-      )}
-      {token && path === "confirmation" && (
-        <Confirmation
-          accessToken={token}
-          filename={file}
-          onDone={() => {
-            setPath("splashscreen");
-            setFile("");
-          }}
-          onRetry={() => {
-            setPath("app");
-            setFile("");
-          }}
-        />
-      )}
+      <OneDriveAuth
+        display={!token}
+        onAuthorized={token => {
+          console.log(token);
+          setToken(token);
+        }}
+      />
+      {screens[path]}
     </AppWrapper>
   );
 };
