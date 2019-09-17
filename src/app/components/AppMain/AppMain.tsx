@@ -3,12 +3,11 @@ import { VideoStream } from "../VideoStream/VideoStream";
 import styled from "styled-components";
 import { TimeChooser } from "../TimeChooser/TimeChooser";
 import OBSRemote from "../../utils/OBSRemote";
-import Timer = NodeJS.Timer;
 import * as fs from "fs";
 import { SceneChooser } from "../SceneChooser/SceneChooser";
 import * as Electron from "electron";
 import * as path from "path";
-import {recordedFilesPath, obsPW} from "../../videobox.config";
+import { config } from "../../videobox.config";
 
 const MainWrapper = styled.div`
   height: 100%;
@@ -54,7 +53,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
   const [countdown, setCountdown] = React.useState(0);
   const [recTime, setRecTime] = React.useState(10);
   const [obs, setObs] = React.useState();
-  const [delayTimer, setDelayTimer] = React.useState<Array<number | Timer>>([]);
+  const [delayTimer, setDelayTimer] = React.useState<Array<number>>([]);
   const [playbackFile, setPlaybackFile] = React.useState("");
   const [mode, setMode] = React.useState<"foto" | "video" | "">("");
 
@@ -62,7 +61,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
     const obsInstance = new OBSRemote();
     obsInstance
       .connect()
-      .then(() => obsInstance.login(obsPW))
+      .then(() => obsInstance.login(config.obsPW))
       .then(() => obsInstance.on("RecordingStopped", onRecordFinished))
       .then(() => setObs(obsInstance));
   }, []);
@@ -114,7 +113,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
           { types: ["screen"], thumbnailSize: { width: 3000, height: 2000 } },
           (err, src) =>
             fs.writeFile(
-              path.join(recordedFilesPath, fileName),
+              path.join(config.recordedFilesPath, fileName),
               src
                 .find(s => s.name === "Entire screen")
                 .thumbnail.crop({ x, y, width, height })
@@ -142,7 +141,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
   };
 
   const onRecordFinished = () => {
-    fs.readdir(recordedFilesPath, (err, files) => {
+    fs.readdir(config.recordedFilesPath, (err, files) => {
       setPlaybackFile(files.find(file => !(window as any).recFiles.includes(file)));
     });
   };
@@ -151,7 +150,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
     stopCountdown();
     if (!recording && !record) {
       setRecord(true);
-      fs.readdir(recordedFilesPath, (err, files) => {
+      fs.readdir(config.recordedFilesPath, (err, files) => {
         (window as any).recFiles = files;
       });
       setDelayTimer([

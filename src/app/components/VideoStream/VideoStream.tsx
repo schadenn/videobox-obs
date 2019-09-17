@@ -1,6 +1,6 @@
 import * as React from "react";
 import styled from "styled-components";
-import { recordedFilesPath } from "../../videobox.config";
+import { config } from "../../videobox.config";
 import * as path from "path";
 import { Video } from "./Video";
 
@@ -33,7 +33,7 @@ const VideoStream: React.FunctionComponent<IVideoStreamProps> = ({
   file,
   onPlaybackEnd,
 }) => {
-  const filePath = file && file.length && path.join(recordedFilesPath, file);
+  const filePath = file && file.length && path.join(config.recordedFilesPath, file);
 
   React.useEffect(() => {
     if (file.includes("jpg")) {

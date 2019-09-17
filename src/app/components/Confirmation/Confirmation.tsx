@@ -3,7 +3,7 @@ import styled from "styled-components";
 import * as ODApi from "onedrive-api";
 import * as path from "path";
 import * as fs from "fs";
-import {recordedFilesPath} from "../../videobox.config";
+import { config } from "../../videobox.config";
 
 const ConfirmationWrapper = styled.div`
   background-color: white;
@@ -79,7 +79,7 @@ const DeleteButton = styled.button`
 
 const Confirmation = ({ accessToken, onDone, filename, onRetry }) => {
   const [okayButtonLabel, setOkayButtonLabel] = React.useState("Okay");
-  const filePath = filename && filename.length && path.join(recordedFilesPath, filename);
+  const filePath = filename && filename.length && path.join(config.recordedFilesPath, filename);
 
   const stats = fs.statSync(filePath);
   const fileSize = stats.size;
