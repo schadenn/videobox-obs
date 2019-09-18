@@ -51,6 +51,7 @@
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-transition-group": "^2.9.0",
+    "sha.js": "^2.4.11",
     "styled-components": "^4.2.0",
     "typescript": "^3.4.5"
   },

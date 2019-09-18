@@ -1,11 +1,11 @@
 import * as React from "react";
 import styled from "styled-components";
-import { recordedFilesPath } from "../../videobox.config";
+import { config } from "../../videobox.config";
 import * as path from "path";
 import { Video } from "./Video";
 
 interface IVideoStreamProps {
-  countdown?: number | false;
+  showCountdown: boolean;
   file: string;
   onPlaybackEnd: () => void;
 }
@@ -29,21 +29,21 @@ const OpacityWrapper = styled.div`
 `;
 
 const VideoStream: React.FunctionComponent<IVideoStreamProps> = ({
-  countdown,
+  showCountdown,
   file,
   onPlaybackEnd,
 }) => {
-  const filePath = file && file.length && path.join(recordedFilesPath, file);
+  const filePath = file && file.length && path.join(config.recordedFilesPath, file);
 
   React.useEffect(() => {
     if (file.includes("jpg")) {
-      setTimeout(onPlaybackEnd, 8000);
+      setTimeout(onPlaybackEnd, config.photoReviewTime * 1000);
     }
   }, [file]);
 
   return (
     <VideoStreamWrapper id={"videoStreamWrapper"}>
-      {countdown > 0 && (
+      {showCountdown && (
         <OpacityWrapper>
           <Video src={"assets/countdown.mp4"} />
         </OpacityWrapper>

@@ -3,12 +3,10 @@ import { VideoStream } from "../VideoStream/VideoStream";
 import styled from "styled-components";
 import { TimeChooser } from "../TimeChooser/TimeChooser";
 import OBSRemote from "../../utils/OBSRemote";
-import Timer = NodeJS.Timer;
 import * as fs from "fs";
 import { SceneChooser } from "../SceneChooser/SceneChooser";
-import * as Electron from "electron";
-import * as path from "path";
-import {recordedFilesPath, obsPW} from "../../videobox.config";
+import { config } from "../../videobox.config";
+import { takePhoto } from "../../utils/takePhoto";
 
 const MainWrapper = styled.div`
   height: 100%;
@@ -47,135 +45,92 @@ const SwitchButton = styled.button<{ mg: boolean } & React.HTMLAttributes<HTMLBu
   }
 ` as React.FunctionComponent<{ mg: boolean } & React.HTMLAttributes<HTMLButtonElement>>;
 
-const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ token, onEnd }) => {
-  const delay = 6;
-  const [record, setRecord] = React.useState(false);
+const AppMain: React.FC<{
+  playbackFile: string;
+  onFileRecorded: (file: string) => void;
+  onPlaybackEnd: () => void;
+}> = ({ playbackFile, onFileRecorded, onPlaybackEnd }) => {
   const [recording, setRecording] = React.useState(false);
-  const [countdown, setCountdown] = React.useState(0);
-  const [recTime, setRecTime] = React.useState(10);
-  const [obs, setObs] = React.useState();
-  const [delayTimer, setDelayTimer] = React.useState<Array<number | Timer>>([]);
-  const [playbackFile, setPlaybackFile] = React.useState("");
+  const [showCountdown, setShowCountdown] = React.useState(false);
+  const [recTime, setRecTime] = React.useState(config.videoDurations[0]);
   const [mode, setMode] = React.useState<"foto" | "video" | "">("");
+  const obs = React.useRef<OBSRemote>();
+  const recFiles = React.useRef([]);
+  const recordingTimer = React.useRef(0);
+  const countdownTimer = React.useRef(0);
 
   React.useEffect(() => {
     const obsInstance = new OBSRemote();
     obsInstance
       .connect()
-      .then(() => obsInstance.login(obsPW))
-      .then(() => obsInstance.on("RecordingStopped", onRecordFinished))
-      .then(() => setObs(obsInstance));
+      .then(() => obsInstance.login(config.obsWebsocketPw))
+      .then(() =>
+        obsInstance.on("RecordingStopped", async () => {
+          const newFile = (await fs.promises.readdir(config.recordedFilesPath)).find(
+            file => !recFiles.current.includes(file),
+          );
+          onFileRecorded(newFile);
+        }),
+      )
+      .then(() => (obs.current = obsInstance));
   }, []);
 
-  React.useEffect(() => {
-    if (record && countdown > 0) {
-      setDelayTimer([
-        ...delayTimer,
-        setTimeout(() => {
-          setCountdown(0);
-        }, 1000 * delay),
-      ]);
-    } else if (record) {
-      stopCountdown();
+  const obsStartRecording = () => obs.current.send({ "request-type": "StartRecording" });
+  const obsStopRecording = () => obs.current.send({ "request-type": "StopRecording" });
+
+  async function startRecording() {
+    setShowCountdown(true);
+    recFiles.current = await fs.promises.readdir(config.recordedFilesPath);
+    countdownTimer.current = setTimeout(async () => {
+      setShowCountdown(false);
       if (mode === "video") {
-        obs.send({ "request-type": "StartRecording" }).then(() => {
-          setRecording(true);
-          (window as any).stopTimer = window.setTimeout(
-            () => obs.send({ "request-type": "StopRecording" }).then(() => setRecording(false)),
-            recTime * 1000,
-          );
-        });
+        await obsStartRecording();
+        setRecording(true);
+        recordingTimer.current = window.setTimeout(async () => {
+          await obsStopRecording();
+          setRecording(false);
+        }, recTime * 1000);
       } else if (mode === "foto") {
         setRecording(true);
         takePhoto()
           .then(fileName => {
-            setPlaybackFile(fileName);
+            onFileRecorded(fileName);
             setRecording(false);
           })
           .catch(error => console.log(error));
       }
-    }
-  }, [countdown, record]);
+    }, 1000 * config.recordingCountdown);
+  }
 
-  const takePhoto = () =>
-    new Promise((resolve, reject) => {
-      const vsWrapper = document.getElementById("videoStreamWrapper");
-      const appWrapper = document.getElementById("appWrapper");
-      const vsRect = vsWrapper.getBoundingClientRect();
-      const appRect = appWrapper.getBoundingClientRect();
-      const x = Math.floor((vsRect.left / appRect.width) * 3000);
-      const y = Math.floor((vsRect.top / appRect.height) * 2000);
-      const width = Math.floor((vsRect.width / appRect.width) * 3000);
-      const height = Math.floor((vsRect.height / appRect.height) * 2000);
+  async function stopRecording() {
+    clearTimeout(recordingTimer.current);
+    await obsStopRecording();
+    setRecording(false);
+  }
 
-      const fileName = `${Date.now()}.jpg`;
-      setTimeout(() => {
-        Electron.desktopCapturer.getSources(
-          { types: ["screen"], thumbnailSize: { width: 3000, height: 2000 } },
-          (err, src) =>
-            fs.writeFile(
-              path.join(recordedFilesPath, fileName),
-              src
-                .find(s => s.name === "Entire screen")
-                .thumbnail.crop({ x, y, width, height })
-                .toJPEG(90),
-              error => {
-                if (error) {
-                  reject(error);
-                } else {
-                  console.log("Photo taken");
-                  resolve(fileName);
-                }
-              },
-            ),
-        );
-      }, 300);
-    });
+  function stopCountdown() {
+    setShowCountdown(false);
+    clearTimeout(countdownTimer.current);
+  }
 
-  const stopCountdown = () => {
-    if (delayTimer) {
-      delayTimer.forEach((timeout: number) => clearTimeout(timeout));
-      setDelayTimer([]);
-      setRecord(false);
-      setCountdown(delay);
-    }
-  };
-
-  const onRecordFinished = () => {
-    fs.readdir(recordedFilesPath, (err, files) => {
-      setPlaybackFile(files.find(file => !(window as any).recFiles.includes(file)));
-    });
-  };
-
-  const onRecord = () => {
-    stopCountdown();
-    if (!recording && !record) {
-      setRecord(true);
-      fs.readdir(recordedFilesPath, (err, files) => {
-        (window as any).recFiles = files;
-      });
-      setDelayTimer([
-        ...delayTimer,
-        setTimeout(() => {
-          setCountdown(delay);
-        }, 1000),
-      ]);
+  async function onRecord() {
+    if (!recording && !showCountdown) {
+      await startRecording();
     } else if (recording) {
-      window.clearTimeout((window as any).stopTimer);
-      obs.send({ "request-type": "StopRecording" }).then(() => setRecording(false));
+      await stopRecording();
+    } else if (showCountdown) {
+      stopCountdown();
     }
-  };
+  }
 
   return (
     <MainWrapper>
       <TopWrapper>
         <SceneChooser obs={obs} />
         <VideoStream
-          countdown={delayTimer.length && countdown > 0 && countdown}
+          showCountdown={showCountdown}
           file={playbackFile}
-          onPlaybackEnd={() => {
-            onEnd(playbackFile);
-          }}
+          onPlaybackEnd={onPlaybackEnd}
         />
       </TopWrapper>
       <BottomWrapper>
@@ -188,7 +143,7 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
                 onRecord();
               }}
             >
-              {recording || record ? "Cheeeese :)" : "Foto"}
+              {recording || showCountdown ? "Cheeeese :)" : "Foto"}
             </SwitchButton>
             {mode !== "foto" && (
               <SwitchButton mg={true} onClick={() => setMode("video")}>
@@ -201,11 +156,12 @@ const AppMain: React.FC<{ token: string; onEnd: (file: string) => void }> = ({ t
           <>
             <TimeChooser
               label={"Aufnahmezeit (in Sekunden):"}
-              values={[10, 30, 60]}
+              values={config.videoDurations}
+              recTime={recTime}
               onChange={val => setRecTime(val)}
             />
             <SwitchButton mg={true} onClick={onRecord}>
-              {recording || record ? "Stop" : "Aufnahme"}
+              {recording || showCountdown ? "Stop" : "Aufnahme"}
             </SwitchButton>
             <SwitchButton mg={true} onClick={() => setMode("")}>
               Zurück

@@ -1,6 +1,11 @@
 export type TScreenNames = "splash" | "app" | "confirmation" | "thankyou";
 
 export interface IConfig {
+  recordingCountdown: number;
+  photoReviewTime: number;
+  videoDurations: number[];
+  obsWebsocketPw: string;
+  recordedFilesPath: string;
   onedrive: {
     scopes: string;
     redirectUri: string;
@@ -10,8 +15,6 @@ export interface IConfig {
     response_mode: string;
     scope: string;
   };
-  obsWebsocketPw: string;
-  recordedFilesPath: string;
   screens: {
     name: TScreenNames;
     show: boolean;
@@ -24,6 +27,11 @@ export interface IConfig {
 }
 
 export const config: IConfig = {
+  recordingCountdown: 6,
+  photoReviewTime: 8,
+  videoDurations: [10, 30, 60],
+  obsWebsocketPw: "ichbins",
+  recordedFilesPath: "C:/obsrec",
   onedrive: {
     scopes:
       "offline_access openid https://graph.microsoft.com/user.read https://graph.microsoft.com/files.readwrite",
@@ -35,8 +43,6 @@ export const config: IConfig = {
     scope:
       "offline_access openid https://graph.microsoft.com/user.read https://graph.microsoft.com/files.readwrite",
   },
-  obsWebsocketPw: "ichbins",
-  recordedFilesPath: "C:/obsrec",
   screens: [
     {
       name: "splash",

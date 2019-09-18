@@ -41,9 +41,9 @@ const RootComponent = () => {
     ),
     app: (
       <AppMain
-        token={token}
-        onEnd={file => {
-          setFile(file);
+        playbackFile={file}
+        onFileRecorded={recFile => setFile(recFile)}
+        onPlaybackEnd={() => {
           setPath(screenNav[path].goto.next);
         }}
       />
@@ -80,7 +80,7 @@ const RootComponent = () => {
           setToken(token);
         }}
       />
-      {screens[path]}
+      {token && screens[path]}
     </AppWrapper>
   );
 };

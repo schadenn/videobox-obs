@@ -31,21 +31,25 @@ const ValueButton = styled.button<{ active: boolean } & React.HTMLAttributes<HTM
 
 interface ITimeChooserProps {
   label: string;
-  values: any[];
+  values: number[];
+  recTime: number;
   onChange: (val: any) => void;
 }
 
-const TimeChooser: React.FunctionComponent<ITimeChooserProps> = ({ label, values, onChange }) => {
-  const [active, setActive] = React.useState(values[0]);
+const TimeChooser: React.FunctionComponent<ITimeChooserProps> = ({
+  label,
+  values,
+  recTime,
+  onChange,
+}) => {
   return (
     <TimeChooserWrapper>
       <LabelWrapper>{label}</LabelWrapper>
       <ValuesWrapper>
         {values.map(val => (
           <ValueButton
-            active={active === val}
+            active={recTime === val}
             onClick={() => {
-              setActive(val);
               onChange(val);
             }}
           >
