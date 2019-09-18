@@ -42,7 +42,7 @@ const plugins = [
     namedExports: {
       electron: ["shell", "ipcMain", "app", "Menu", "dialog", "webFrame"],
       "electron-updater": ["autoUpdater"],
-      "electron-log": ["info", "error", "transports"],
+      "electron-log": ["info", "error"],
       react: ["cloneElement", "createContext", "Component", "createElement", "useCallback"],
       "react-dom": ["render"],
       "react-is": ["isElement", "isValidElementType", "ForwardRef"],
